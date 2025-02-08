@@ -1,0 +1,6 @@
+require "cachelib"
+
+download_file("/H.Cache.bin", TYPE_MANIFEST, "---------------------w")
+
+-- This way, we end up requesting http://content.warframe.com/0/H.Cache.bin!D_---------------------w
+-- Although the client would typically request https://origin.warframe.com/origin/0/H.Cache.bin!D_---------------------w

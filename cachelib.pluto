@@ -1,0 +1,165 @@
+local { base64, crypto, ffi, http } = require "*"
+
+function b64m_encode(data)
+	return base64.encode(data, false):replace("/", "-")
+end
+
+function b64m_decode(data)
+	return base64.decode(data:replace("-", "/"))
+end
+
+function get_local_path(path, suffix = "")
+	return "data/0"..suffix..path
+end
+
+class CacheManifestReader
+	function __construct(path)
+		self.bin = io.contents(get_local_path(path).."_H")
+		self.i = 1
+		self.i += 20
+		self.entry_i = 0
+		self.num_entries, self.i = string.unpack("<I4", self.bin, self.i)
+		if self.num_entries == 0 then
+			self.num_entries, self.i = string.unpack("<I4", self.bin, self.i)
+		end
+		self.paths = {}
+		self.hashes = {}
+	end
+
+	function getHash(target_path)
+		if hash := self.hashes[target_path] then
+			return hash
+		end
+		while self.entry_i ~= self.num_entries do
+			self.entry_i += 1
+			local path, hash
+			path, self.i = string.unpack("<s4", self.bin, self.i)
+			hash = self.bin:sub(self.i, self.i + 15)
+			self.i += 20
+			self.paths:insert(path)
+			self.hashes[path] = hash
+			if path == target_path then
+				return hash
+			end
+		end
+	end
+
+	function getPaths()
+		while self.entry_i ~= self.num_entries do
+			self.entry_i += 1
+			local path, hash
+			path, self.i = string.unpack("<s4", self.bin, self.i)
+			hash = self.bin:sub(self.i, self.i + 15)
+			self.i += 20
+			self.paths:insert(path)
+			self.hashes[path] = hash
+		end
+		return self.paths
+	end
+
+	function downloadFile(path, type, suffix = "")
+		local manifest_hash = self:getHash(path)
+		assert(manifest_hash ~= nil, "file not in manifest")
+
+		local fh = io.open(get_local_path(path, suffix).."_H", "rb")
+		local header_hash = fh?:read(16)
+		--local computed_hash = crypto.md5("SHCC\x1F\x00\x00\x00"..fh:read("*a"), true)
+
+		if manifest_hash ~= header_hash then
+			download_file(path, type, b64m_encode(manifest_hash), suffix)
+		end
+	end
+end
+
+function oodle_decompress(compressed, decompressed_size)
+	if not oo2core_9_win64 then
+		oo2core_9_win64 = ffi.open("oo2core_9_win64")
+		oo2core_9_win64:cdef[[
+		void OodleLZ_Decompress(void* inputData, size_t inputLen, void* outputData, size_t outputLen, int a5, int a6, int a7, size_t a8, size_t a9, size_t a10, size_t a11, size_t a12, size_t a13, int a14)
+		]]
+	end
+	local pCompressed = ffi.alloc(#compressed)
+	ffi.write(pCompressed, compressed)
+	local out = ffi.alloc(decompressed_size)
+	oo2core_9_win64.OodleLZ_Decompress(pCompressed, #compressed, out, decompressed_size, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3)
+	return ffi.read(out)
+end
+
+function shcc_decompress_chunk(bin, i)
+	local chunk_type, decompressed_size, compressed_size
+	chunk_type, i = string.unpack("<I1", bin, i)	
+	decompressed_size, i = string.unpack("<I4", bin, i)
+	compressed_size, i = string.unpack("<I4", bin, i)
+	--[[print("chunk_type", compressed_size)
+	print("compressed_size", compressed_size)
+	print("decompressed_size", decompressed_size)]]
+	local decompressed = ""
+	if chunk_type == 0 then
+		assert(compressed_size == decompressed_size)
+		decompressed ..= bin:sub(i, i + compressed_size - 1)
+		i += decompressed_size
+	else
+		assert(chunk_type == 2)
+		while #decompressed < decompressed_size do
+			local block_info = bin:sub(i, i + 7)
+			i += 8
+			assert(block_info:byte(1) == 0x80)
+			assert((block_info:byte(8) & 0x0F) == 0x01)
+			local num1 = (block_info:byte(1) << 24) | (block_info:byte(2) << 16) | (block_info:byte(3) << 8) | block_info:byte(4)
+			local num2 = (block_info:byte(5) << 24) | (block_info:byte(6) << 16) | (block_info:byte(7) << 8) | block_info:byte(8)
+			local block_compressed_size = (num1 >> 2) & 0xFFFFFF
+			local block_decompressed_size = (num2 >> 5) & 0xFFFFFF
+			--[[print("block_compressed_size", block_compressed_size)
+			print("block_decompressed_size", block_decompressed_size)]]
+			assert(bin:byte(i) == 0x8C)
+			decompressed ..= oodle_decompress(bin:sub(i, i + block_compressed_size - 1), block_decompressed_size)
+			i += block_compressed_size
+		end
+	end
+	return decompressed, i
+end
+
+function shcc_decompress(bin)
+	local i = 1
+	i += 8
+	local data = {}
+	data.H, i = shcc_decompress_chunk(bin, i)
+	if bin:byte(i) == 0x02 then
+		data.B, i = shcc_decompress_chunk(bin, i)
+	end
+	return data
+end
+
+TYPE_DECO_OVERRIDES = 0x3
+TYPE_SOUND2 = 0x4
+TYPE_SOUND = 0x6
+TYPE_MANIFEST = 0xD -- also used for .cvr
+TYPE_BIN = 0x2B
+TYPE_DEPENDANCIES_BIN = 0x52
+TYPE_LUA = 0x5B
+TYPE_FBX = 0x60
+TYPE_LEVEL_FBX = 0x67
+TYPE_TMF = 0x73
+TYPE_WAV = 0x8B
+TYPE_ANIM_FBX = 0x84
+TYPE_FX_MAT = 0xD0
+TYPE_SKEL_FBX = 0x110
+
+function download_file(path, type, b64m_hash, suffix = "")
+	local url = string.format("http://content.warframe.com/0%s%s!%X_%s", suffix, path, type, b64m_hash)
+	print("Downloading "..url)
+	local bin, status = http.request(url)
+	if status == 200 then
+		--io.contents("data/tmp", bin)
+		--os.execute("decompress-shcc.exe data/tmp data"..path..suffix)
+		local local_path = get_local_path(path, suffix)
+		io.mkdirs(io.part(local_path, "parent"))
+		local data = shcc_decompress(bin)
+		io.contents(local_path.."_H", data.H)
+		if data.B then
+			io.contents(local_path.."_B", data.B)
+		end
+	else
+		print("Download failed! (HTTP "..status..")")
+	end
+end
