@@ -133,6 +133,21 @@ function shcc_decompress(bin)
 	return data
 end
 
+-- Works for H.Cache.bin so far
+function shcc_pack(data)
+	local bin = "SHCC\x1f\x00\x00\x00"
+
+	bin ..= "\x00"
+	bin ..= string.pack("<I4I4", #data, #data)
+	bin ..= crypto.md5("SHCC\x1f\x00\x00\x00"..data:sub(17), true)
+	bin ..= data:sub(17)
+
+	bin ..= "\x00\xFF\xFF\xFF\xFF\x00\x00\x00\x00\x00\xFF\xFF\xFF\xFF\x00\x00\x00\x00\x52"
+	bin ..= string.pack("<I4", crypto.crc32c(bin))
+
+	return bin
+end
+
 TYPE_DECO_OVERRIDES = 0x3
 TYPE_SOUND2 = 0x4
 TYPE_SOUND = 0x6
