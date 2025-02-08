@@ -156,6 +156,9 @@ function download_file(path, type, b64m_hash, suffix = "")
 		--os.execute("decompress-shcc.exe data/tmp data"..path..suffix)
 		local local_path = get_local_path(path, suffix)
 		io.mkdirs(io.part(local_path, "parent"))
+		if bin:sub(1, 4) ~= "SHCC" then
+			bin = oodle_decompress(bin, #bin * 10)
+		end
 		local data = shcc_decompress(bin)
 		io.contents(local_path.."_H", data.H)
 		if data.B then
