@@ -61,8 +61,10 @@ class CacheManifestReader
 		local manifest_hash = self:getHash(path)
 		assert(manifest_hash ~= nil, "file not in manifest")
 
-		local fh = io.open(get_local_path(path, suffix).."_H", "rb")
-		local header_hash = fh?:read(16)
+		local header_hash
+		if cont := io.contents(get_local_path(path, suffix).."_H") then
+			header_hash = cont:sub(1, 16)
+		end
 		--local computed_hash = crypto.md5("SHCC\x1F\x00\x00\x00"..fh:read("*a"), true)
 
 		if manifest_hash ~= header_hash then
