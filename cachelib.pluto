@@ -126,8 +126,9 @@ function shcc_decompress(bin)
 	i += 8
 	local data = {}
 	data.H, i = shcc_decompress_chunk(bin, i)
-	if bin:byte(i) == 0x02 then
+	try
 		data.B, i = shcc_decompress_chunk(bin, i)
+	catch _ then
 	end
 	return data
 end
