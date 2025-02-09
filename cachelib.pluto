@@ -305,3 +305,79 @@ end
 function cache_get_toc_entry(cache, e)
 	return shcc_decompress_chunk_oodle(cache, 1 + e.cache_offset, e.decompressed_size)
 end
+
+function zstd_init()
+	if not libzstd then
+		libzstd = ffi.open(base_path.."/libzstd")
+		libzstd:cdef[[
+		size_t ZSTD_createDDict(const char* dictBuffer, size_t dictSize);
+		size_t ZSTD_createDCtx();
+		size_t ZSTD_DCtx_setParameter(size_t dctx, int param, int value);
+		size_t ZSTD_decompress_usingDDict(size_t dctx, void* dst, size_t dstCapacity, const char* src, size_t srcSize, size_t ddict);
+		size_t ZSTD_freeDCtx(size_t dctx);
+		size_t ZSTD_freeDDict(size_t ddict);
+		]]
+	end
+end
+
+function unpack_u32_dyn_le(bin, i)
+	local value = 0
+	local byte
+	local shift = 0
+	while shift < 28 do
+		byte, i = string.unpack("<I1", bin, i)
+		value |= (byte & 0x7f) << shift
+		if (byte & 0x80) == 0 then
+			return value, i
+		end
+		shift += 7
+	end
+	byte, i = string.unpack("<I1", bin, i)
+	assert(byte <= 0xF)
+	value |= (byte << shift)
+	return value, i
+end
+
+function languages_parse(bin)
+	zstd_init()
+	local entries = {}
+	local i = 1
+	i += 16 -- hash
+	i += 4 -- 0x14
+	i += 4 -- 0x2B
+	i += 4 -- 0x01
+	do
+		local num_suffixes
+		num_suffixes, i = string.unpack("<I4", bin, i)
+		for _ = 1, num_suffixes do
+			_suffix, i = string.unpack("<s4", bin, i)
+		end
+	end
+	while i < #bin do
+		local dict_bin, num_paths
+		dict_bin, num_paths, i = string.unpack("<s4I4", bin, i)
+		local dict = libzstd.ZSTD_createDDict(dict_bin, #dict_bin)
+		local ctx = libzstd.ZSTD_createDCtx()
+		libzstd.ZSTD_DCtx_setParameter(ctx, 1000, 1)
+		for _ = 1, num_paths do
+			local path, chunk, num_labels
+			path, chunk, num_labels, i = string.unpack("<s4s4I4", bin, i)
+			for __ = 1, num_labels do
+				local name, offset, size, flags
+				name, offset, size, flags, i = string.unpack("<s4I4I2I2", bin, i)
+				local data = chunk:sub(1 + offset, offset + size)
+				if (flags & 0x200) ~= 0 then
+					local decompressed_size, data_i = unpack_u32_dyn_le(data, 1)
+					local buf = ffi.alloc(decompressed_size)
+					assert(decompressed_size == libzstd.ZSTD_decompress_usingDDict(ctx, buf, decompressed_size, data:sub(data_i), #data - (data_i - 1), dict))
+					data = ffi.read(buf)
+				end
+				entries[path..name] = data
+			end
+		end
+		libzstd.ZSTD_freeDCtx(ctx)
+		libzstd.ZSTD_freeDDict(dict)
+		break
+	end
+	return entries
+end
