@@ -115,7 +115,7 @@ function shcc_decompress_chunk(bin, i)
 		assert(compressed_size == decompressed_size)
 		local data = bin:sub(i, i + compressed_size - 1)
 		i += decompressed_size
-		return data
+		return data, i
 	end
 	assert(chunk_type == 2)
 	return shcc_decompress_chunk_oodle(bin, i, decompressed_size)
