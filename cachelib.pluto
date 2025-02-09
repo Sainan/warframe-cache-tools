@@ -161,24 +161,26 @@ end
 -- Works for H.Cache.bin so far
 function shcc_pack_H(data)
 	local bin = "SHCC\x1f\x00\x00\x00"
+	local hash = crypto.md5("SHCC\x1f\x00\x00\x00"..data:sub(17), true)
 
 	bin ..= "\x00"
 	bin ..= string.pack("<I4I4", #data, #data)
-	bin ..= crypto.md5("SHCC\x1f\x00\x00\x00"..data:sub(17), true)
+	bin ..= hash
 	bin ..= data:sub(17)
 
 	bin ..= "\x00\xFF\xFF\xFF\xFF\x00\x00\x00\x00\x00\xFF\xFF\xFF\xFF\x00\x00\x00\x00\x52"
 	bin ..= string.pack("<I4", crypto.crc32c(bin))
 
-	return bin
+	return bin, hash
 end
 
 function shcc_pack_HB(H, B_compressed, B_decompressed_size)
 	local bin = "SHCC\x1f\x00\x00\x00"
+	local hash = shcc_hash({ H = H, B_compressed = B_compressed })
 
 	bin ..= "\x00"
 	bin ..= string.pack("<I4I4", #H, #H)
-	bin ..= shcc_hash({ H = H, B_compressed = B_compressed })
+	bin ..= hash
 	bin ..= H:sub(17)
 
 	bin ..= "\x02"
@@ -188,7 +190,7 @@ function shcc_pack_HB(H, B_compressed, B_decompressed_size)
 	bin ..= "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x52"
 	bin ..= string.pack("<I4", crypto.crc32c(bin))
 
-	return bin
+	return bin, hash
 end
 
 function shcc_compress_chunk_oodle(data)
