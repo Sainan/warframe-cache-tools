@@ -108,7 +108,7 @@ function shcc_decompress_chunk(bin, i)
 	chunk_type, i = string.unpack("<I1", bin, i)	
 	decompressed_size, i = string.unpack("<I4", bin, i)
 	compressed_size, i = string.unpack("<I4", bin, i)
-	--[[print("chunk_type", compressed_size)
+	--[[print("chunk_type", chunk_type)
 	print("compressed_size", compressed_size)
 	print("decompressed_size", decompressed_size)]]
 	if chunk_type == 0 then
