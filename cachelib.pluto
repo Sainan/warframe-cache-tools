@@ -65,7 +65,6 @@ class CacheManifestReader
 		if cont := io.contents(get_local_path(path, suffix).."_H") then
 			header_hash = cont:sub(1, 16)
 		end
-		--local computed_hash = crypto.md5("SHCC\x1F\x00\x00\x00"..fh:read("*a"), true)
 
 		if manifest_hash ~= header_hash then
 			download_file(path, type, b64m_encode(manifest_hash), suffix)
@@ -147,7 +146,9 @@ function shcc_decompress(bin)
 	local data = {}
 	data.H, i = shcc_decompress_chunk(bin, i)
 	try
+		local B_start = i
 		data.B, i = shcc_decompress_chunk(bin, i)
+		data.B_compressed = bin:sub(B_start + 9, -15)
 	catch _ then
 	end
 	return data
@@ -216,6 +217,9 @@ function download_file(path, type, b64m_hash, suffix = "")
 		io.contents(local_path.."_H", data.H)
 		if data.B then
 			io.contents(local_path.."_B", data.B)
+		end
+		if b64m_hash ~= "---------------------w" then
+			assert(b64m_hash == b64m_encode(crypto.md5("SHCC\x1F\x00\x00\x00"..data.H:sub(17)..(data.B_compressed or ""), true)))
 		end
 	else
 		print("Download failed! (HTTP "..status..")")
