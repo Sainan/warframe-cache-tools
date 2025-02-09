@@ -155,7 +155,7 @@ function shcc_decompress(bin)
 end
 
 -- Works for H.Cache.bin so far
-function shcc_pack(data)
+function shcc_pack_H(data)
 	local bin = "SHCC\x1f\x00\x00\x00"
 
 	bin ..= "\x00"
@@ -164,6 +164,23 @@ function shcc_pack(data)
 	bin ..= data:sub(17)
 
 	bin ..= "\x00\xFF\xFF\xFF\xFF\x00\x00\x00\x00\x00\xFF\xFF\xFF\xFF\x00\x00\x00\x00\x52"
+	bin ..= string.pack("<I4", crypto.crc32c(bin))
+
+	return bin
+end
+
+function shcc_pack_HB(H, B_compressed, B_decompressed_size)
+	local bin = "SHCC\x1f\x00\x00\x00"
+
+	bin ..= "\x00"
+	bin ..= string.pack("<I4I4", #H, #H)
+	bin ..= H
+
+	bin ..= "\x02"
+	bin ..= string.pack("<I4I4", B_decompressed_size, #B_compressed)
+	bin ..= B_compressed
+
+	bin ..= "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x52"
 	bin ..= string.pack("<I4", crypto.crc32c(bin))
 
 	return bin
