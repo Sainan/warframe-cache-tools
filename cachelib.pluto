@@ -137,7 +137,7 @@ function shcc_decompress_chunk_oodle(bin, i, decompressed_size)
 	return decompressed, i
 end
 
-function shcc_decompress(bin)
+function shcc_unpack(bin)
 	local i = 1
 	i += 8
 	local data = {}
@@ -234,7 +234,7 @@ function download_file(path, type, b64m_hash, suffix = "")
 		if bin:sub(1, 4) ~= "SHCC" then
 			bin = oodle_decompress(bin, #bin * 10)
 		end
-		local data = shcc_decompress(bin)
+		local data = shcc_unpack(bin)
 		io.contents(local_path.."_H", data.H)
 		if data.B then
 			io.contents(local_path.."_B", data.B)
