@@ -338,6 +338,21 @@ function unpack_u32_dyn_le(bin, i)
 	return value, i
 end
 
+function pack_oml(value)
+	local bin = "" 
+	while true do
+		local byte = value & 0x7F
+		value >>= 7
+		if value == 0 then
+			bin ..= string.pack("<I1", byte)
+			break
+		end
+		byte |= 0x80
+		bin ..= string.pack("<I1", byte)
+	end
+	return bin
+end
+
 function languages_unpack(bin)
 	zstd_init()
 	local entries = {}
@@ -353,8 +368,9 @@ function languages_unpack(bin)
 			_suffix, i = string.unpack("<s4", bin, i)
 		end
 	end
+	local dict_bin
 	while i < #bin do
-		local dict_bin, num_paths
+		local num_paths
 		dict_bin, num_paths, i = string.unpack("<s4I4", bin, i)
 		local dict = libzstd.ZSTD_createDDict(dict_bin, #dict_bin)
 		local ctx = libzstd.ZSTD_createDCtx()
@@ -379,5 +395,47 @@ function languages_unpack(bin)
 		libzstd.ZSTD_freeDDict(dict)
 		break
 	end
-	return entries
+	return entries, dict_bin
+end
+
+-- A valid dict is needed for the game to successfully load the file.
+function languages_pack(entries, dict = "")
+	local paths = {}
+	local num_paths = 0
+	for k, v in entries do
+		local i = k:rfind("/")
+		local path = k:sub(1, i)
+		local name = k:sub(i + 1)
+		if not paths[path] then
+			paths[path] = {}
+			num_paths += 1
+		end
+		paths[path][name] = v
+	end
+	local bin = {}
+	bin:insert("\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00")
+	bin:insert("\x14\x00\x00\x00")
+	bin:insert("\x2B\x00\x00\x00")
+	bin:insert("\x01\x00\x00\x00")
+	bin:insert("\x0F\x00\x00\x00\x03\x00\x00\x00\x5F\x64\x65\x03\x00\x00\x00\x5F\x65\x6E\x03\x00\x00\x00\x5F\x65\x73\x03\x00\x00\x00\x5F\x66\x72\x03\x00\x00\x00\x5F\x69\x74\x03\x00\x00\x00\x5F\x6A\x61\x03\x00\x00\x00\x5F\x6B\x6F\x03\x00\x00\x00\x5F\x70\x6C\x03\x00\x00\x00\x5F\x70\x74\x03\x00\x00\x00\x5F\x72\x75\x03\x00\x00\x00\x5F\x74\x63\x03\x00\x00\x00\x5F\x74\x68\x03\x00\x00\x00\x5F\x74\x72\x03\x00\x00\x00\x5F\x75\x6B\x03\x00\x00\x00\x5F\x7A\x68")
+	bin:insert(string.pack("<s4", dict))
+	bin:insert(string.pack("<I4", num_paths))
+	for path, labels in paths do
+		local chunk = new buffer()
+		local chunk_size = 0
+		local buf = {}
+		local num_labels = 0
+		for name, data in labels do
+			buf:insert(string.pack("<s4I4I2I2", name, chunk_size, #data, 0))
+			chunk:append(data)
+			chunk:append("\0")
+			chunk_size += #data + 1
+			num_labels += 1
+		end
+		bin:insert(string.pack("<s4I4", path, chunk_size))
+		bin:insert(chunk:tostring())
+		bin:insert(string.pack("<I4", num_labels))
+		bin:insert(buf:concat())
+	end
+	return bin:concat()
 end
