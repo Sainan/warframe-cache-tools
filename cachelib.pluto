@@ -178,7 +178,8 @@ function shcc_pack_HB(H, B_compressed, B_decompressed_size)
 
 	bin ..= "\x00"
 	bin ..= string.pack("<I4I4", #H, #H)
-	bin ..= H
+	bin ..= shcc_hash({ H = H, B_compressed = B_compressed })
+	bin ..= H:sub(17)
 
 	bin ..= "\x02"
 	bin ..= string.pack("<I4I4", B_decompressed_size, #B_compressed)
