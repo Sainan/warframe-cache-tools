@@ -338,7 +338,7 @@ function unpack_u32_dyn_le(bin, i)
 	return value, i
 end
 
-function languages_parse(bin)
+function languages_unpack(bin)
 	zstd_init()
 	local entries = {}
 	local i = 1

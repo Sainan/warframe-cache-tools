@@ -10,6 +10,6 @@ local lang_manifest = new CacheManifestReader("/B.Cache.Windows_"..lang..".bin")
 lang_manifest:downloadFile("/Languages.bin", TYPE_BIN, "_"..lang)
 
 local bin = io.contents(get_local_path("/Languages.bin", "_"..lang).."_H")
-local entries = languages_parse(bin)
+local entries = languages_unpack(bin)
 entries.__order = entries:keys():sort()
 io.contents("dict.json", require"json".encode(entries, true):replace("\n    \"", "\n  \""))
