@@ -154,6 +154,10 @@ function shcc_decompress(bin)
 	return data
 end
 
+function shcc_hash(data)
+	return crypto.md5("SHCC\x1F\x00\x00\x00"..data.H:sub(17)..(data.B_compressed or ""), true)
+end
+
 -- Works for H.Cache.bin so far
 function shcc_pack_H(data)
 	local bin = "SHCC\x1f\x00\x00\x00"
@@ -236,7 +240,7 @@ function download_file(path, type, b64m_hash, suffix = "")
 			io.contents(local_path.."_B", data.B)
 		end
 		if b64m_hash ~= "---------------------w" then
-			assert(b64m_hash == b64m_encode(crypto.md5("SHCC\x1F\x00\x00\x00"..data.H:sub(17)..(data.B_compressed or ""), true)))
+			assert(b64m_hash == b64m_encode(shcc_hash(data)))
 		end
 	else
 		print("Download failed! (HTTP "..status..")")
