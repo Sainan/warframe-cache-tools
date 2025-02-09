@@ -1,4 +1,4 @@
-local { base64, crypto, ffi, http } = require "*"
+local { base64, buffer, crypto, ffi, http } = require "*"
 
 function b64m_encode(data)
 	return base64.encode(data, false):replace("/", "-")
@@ -95,28 +95,32 @@ function shcc_decompress_chunk(bin, i)
 	--[[print("chunk_type", compressed_size)
 	print("compressed_size", compressed_size)
 	print("decompressed_size", decompressed_size)]]
-	local decompressed = ""
 	if chunk_type == 0 then
 		assert(compressed_size == decompressed_size)
-		decompressed ..= bin:sub(i, i + compressed_size - 1)
+		local data = bin:sub(i, i + compressed_size - 1)
 		i += decompressed_size
-	else
-		assert(chunk_type == 2)
-		while #decompressed < decompressed_size do
-			local block_info = bin:sub(i, i + 7)
-			i += 8
-			assert(block_info:byte(1) == 0x80)
-			assert((block_info:byte(8) & 0x0F) == 0x01)
-			local num1 = (block_info:byte(1) << 24) | (block_info:byte(2) << 16) | (block_info:byte(3) << 8) | block_info:byte(4)
-			local num2 = (block_info:byte(5) << 24) | (block_info:byte(6) << 16) | (block_info:byte(7) << 8) | block_info:byte(8)
-			local block_compressed_size = (num1 >> 2) & 0xFFFFFF
-			local block_decompressed_size = (num2 >> 5) & 0xFFFFFF
-			--[[print("block_compressed_size", block_compressed_size)
-			print("block_decompressed_size", block_decompressed_size)]]
-			assert(bin:byte(i) == 0x8C)
-			decompressed ..= oodle_decompress(bin:sub(i, i + block_compressed_size - 1), block_decompressed_size)
-			i += block_compressed_size
-		end
+		return data
+	end
+	assert(chunk_type == 2)
+	return shcc_decompress_chunk_oodle(bin, i, decompressed_size)
+end
+
+function shcc_decompress_chunk_oodle(bin, i, decompressed_size)
+	local decompressed = ""
+	while #decompressed < decompressed_size do
+		local block_info = bin:sub(i, i + 7)
+		i += 8
+		assert(block_info:byte(1) == 0x80)
+		assert((block_info:byte(8) & 0x0F) == 0x01)
+		local num1 = (block_info:byte(1) << 24) | (block_info:byte(2) << 16) | (block_info:byte(3) << 8) | block_info:byte(4)
+		local num2 = (block_info:byte(5) << 24) | (block_info:byte(6) << 16) | (block_info:byte(7) << 8) | block_info:byte(8)
+		local block_compressed_size = (num1 >> 2) & 0xFFFFFF
+		local block_decompressed_size = (num2 >> 5) & 0xFFFFFF
+		--[[print("block_compressed_size", block_compressed_size)
+		print("block_decompressed_size", block_decompressed_size)]]
+		assert(bin:byte(i) == 0x8C)
+		decompressed ..= oodle_decompress(bin:sub(i, i + block_compressed_size - 1), block_decompressed_size)
+		i += block_compressed_size
 	end
 	return decompressed, i
 end
@@ -184,4 +188,63 @@ function download_file(path, type, b64m_hash, suffix = "")
 	else
 		print("Download failed! (HTTP "..status..")")
 	end
+end
+
+function toc_decode(bin)
+	local i = 1
+	i += 8
+	local entries = {}
+	local index = 1
+	while i < #bin do
+		local e = {}
+		e.index = index
+		index += 1
+		e.cache_offset, e.timestamp, e.compressed_size, e.decompressed_size, e.reserved, e.parent_index, i = string.unpack("<I8I8I4I4I4I4", bin, i)
+		e.name = string.unpack("z", bin, i)
+		i += 64
+		entries:insert(e)
+	end
+	return entries
+end
+
+function toc_encode(entries)
+	local buf = new buffer()
+	buf:append("\x4E\xC6\x67\x18\x14\x00\x00\x00")
+	for entries as e do
+		buf:append(string.pack("<I8I8I4I4I4I4", e.cache_offset, e.timestamp, e.compressed_size, e.decompressed_size, e.reserved, e.parent_index))
+		buf:append(e.name)
+		buf:append("\0":rep(64 - #e.name))
+	end
+	return buf:tostring()
+end
+
+function toc_get_path(entries, index)
+	if index == 0 then
+		return ""
+	end
+	local e = entries[index]
+	return toc_get_path(entries, e.parent_index).."/"..e.name
+end
+
+function toc_find_path(entries, path)
+	local name = path:split("/"):back()
+	for i, e in entries do
+		if e.name == name and toc_get_path(entries, i) == path then
+			return e
+		end
+	end
+end
+
+function toc_list_files(entries, index)
+	local files = {}
+	for entries as e do
+		if e.parent_index == index then
+			files:insert(e)
+		end
+	end
+	return files
+end
+
+function cache_get_toc_entry(cache, e)
+	return shcc_decompress_chunk_oodle(cache, 1 + e.cache_offset, e.decompressed_size)
 end
