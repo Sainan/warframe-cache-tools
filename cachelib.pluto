@@ -25,36 +25,35 @@ class CacheManifestReader
 		end
 		self.paths = {}
 		self.hashes = {}
+		self.unks = {}
 	end
 
-	function getHash(target_path)
-		if hash := self.hashes[target_path] then
-			return hash
-		end
+	function seek(opt_stop_at_path)
 		while self.entry_i ~= self.num_entries do
 			self.entry_i += 1
-			local path, hash
+			local path, hash, unk
 			path, self.i = string.unpack("<s4", self.bin, self.i)
 			hash = self.bin:sub(self.i, self.i + 15)
+			unk = self.bin:sub(self.i + 16, self.i + 19)
 			self.i += 20
 			self.paths:insert(path)
 			self.hashes[path] = hash
-			if path == target_path then
+			self.unks[path] = unk
+			if path == opt_stop_at_path then
 				return hash
 			end
 		end
 	end
 
-	function getPaths()
-		while self.entry_i ~= self.num_entries do
-			self.entry_i += 1
-			local path, hash
-			path, self.i = string.unpack("<s4", self.bin, self.i)
-			hash = self.bin:sub(self.i, self.i + 15)
-			self.i += 20
-			self.paths:insert(path)
-			self.hashes[path] = hash
+	function getHash(path)
+		if hash := self.hashes[path] then
+			return hash
 		end
+		return self:seek(path)
+	end
+
+	function getPaths()
+		self:seek()
 		return self.paths
 	end
 
@@ -70,6 +69,24 @@ class CacheManifestReader
 		if manifest_hash ~= header_hash then
 			download_file(path, type, b64m_encode(manifest_hash), suffix)
 		end
+	end
+
+	function setHash(path, hash)
+		assert(#hash == 16)
+		self:seek(path)
+		self.hashes[path] = hash
+	end
+
+	function pack()
+		self:seek()
+		local bin = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00".."\x0D\x00\x00\x00".."\x00\x00\x00\x00"
+		bin ..= string.pack("<I4", #self.paths)
+		for self.paths as path do
+			bin ..= string.pack("<s4", path)
+			bin ..= self.hashes[path]
+			bin ..= self.unks[path]
+		end
+		return bin
 	end
 end
 
