@@ -1,4 +1,4 @@
-require "cachelib"
+dofile "../cachelib.pluto"
 
 $define lang = "en"
 

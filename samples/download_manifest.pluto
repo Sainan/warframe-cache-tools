@@ -1,4 +1,4 @@
-require "cachelib"
+dofile "../cachelib.pluto"
 
 download_file("/H.Cache.bin", TYPE_MANIFEST, "---------------------w")
 

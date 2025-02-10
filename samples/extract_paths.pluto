@@ -1,4 +1,4 @@
-require "cachelib"
+dofile "../cachelib.pluto"
 
 local meta_manifest = new CacheManifestReader("/H.Cache.bin")
 print("Cache manifest hash: "..b64m_encode(meta_manifest:getHash("/B.Cache.Windows.bin")))
@@ -6,8 +6,7 @@ print("Cache manifest hash: "..b64m_encode(meta_manifest:getHash("/B.Cache.Windo
 meta_manifest:downloadFile("/B.Cache.Windows.bin", TYPE_MANIFEST)
 local main_manifest = new CacheManifestReader("/B.Cache.Windows.bin")
 
+local fh = io.open("manifest paths.txt", "w")
 for main_manifest:getPaths() as path do
-	if path:sub(-4) == ".lua" then
-		main_manifest:downloadFile(path, TYPE_LUA)
-	end
+	fh:write(path, "\n")
 end

@@ -1,4 +1,4 @@
-require "cachelib"
+dofile "../cachelib.pluto"
 
 local meta_manifest = new CacheManifestReader("/H.Cache.bin")
 print("Cache manifest hash: "..b64m_encode(meta_manifest:getHash("/B.Cache.Windows.bin")))
