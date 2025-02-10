@@ -79,14 +79,14 @@ class CacheManifest
 
 	function pack()
 		self:seek()
-		local bin = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00".."\x0D\x00\x00\x00".."\x00\x00\x00\x00"
-		bin ..= string.pack("<I4", #self.paths)
+		local bin = { "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00".."\x0D\x00\x00\x00".."\x00\x00\x00\x00" }
+		bin:insert(string.pack("<I4", #self.paths))
 		for self.paths as path do
-			bin ..= string.pack("<s4", path)
-			bin ..= self.hashes[path]
-			bin ..= self.unks[path]
+			bin:insert(string.pack("<s4", path))
+			bin:insert(self.hashes[path])
+			bin:insert(self.unks[path])
 		end
-		return bin
+		return bin:concat()
 	end
 end
 
