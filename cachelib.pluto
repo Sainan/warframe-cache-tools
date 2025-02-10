@@ -384,33 +384,29 @@ function languages_unpack(bin)
 			_suffix, i = string.unpack("<s4", bin, i)
 		end
 	end
-	local dict_bin
-	while i < #bin do
-		local num_paths
-		dict_bin, num_paths, i = string.unpack("<s4I4", bin, i)
-		local dict = libzstd.ZSTD_createDDict(dict_bin, #dict_bin)
-		local ctx = libzstd.ZSTD_createDCtx()
-		libzstd.ZSTD_DCtx_setParameter(ctx, 1000, 1)
-		for _ = 1, num_paths do
-			local path, chunk, num_labels
-			path, chunk, num_labels, i = string.unpack("<s4s4I4", bin, i)
-			for __ = 1, num_labels do
-				local name, offset, size, flags
-				name, offset, size, flags, i = string.unpack("<s4I4I2I2", bin, i)
-				local data = chunk:sub(1 + offset, offset + size)
-				if (flags & 0x200) ~= 0 then
-					local decompressed_size, data_i = unpack_u32_dyn_le(data, 1)
-					local buf = ffi.alloc(decompressed_size)
-					assert(decompressed_size == libzstd.ZSTD_decompress_usingDDict(ctx, buf, decompressed_size, data:sub(data_i), #data - (data_i - 1), dict))
-					data = ffi.read(buf)
-				end
-				entries[path..name] = data
+	local dict_bin, num_paths
+	dict_bin, num_paths, i = string.unpack("<s4I4", bin, i)
+	local dict = libzstd.ZSTD_createDDict(dict_bin, #dict_bin)
+	local ctx = libzstd.ZSTD_createDCtx()
+	libzstd.ZSTD_DCtx_setParameter(ctx, 1000, 1)
+	for _ = 1, num_paths do
+		local path, chunk, num_labels
+		path, chunk, num_labels, i = string.unpack("<s4s4I4", bin, i)
+		for __ = 1, num_labels do
+			local name, offset, size, flags
+			name, offset, size, flags, i = string.unpack("<s4I4I2I2", bin, i)
+			local data = chunk:sub(1 + offset, offset + size)
+			if (flags & 0x200) ~= 0 then
+				local decompressed_size, data_i = unpack_u32_dyn_le(data, 1)
+				local buf = ffi.alloc(decompressed_size)
+				assert(decompressed_size == libzstd.ZSTD_decompress_usingDDict(ctx, buf, decompressed_size, data:sub(data_i), #data - (data_i - 1), dict))
+				data = ffi.read(buf)
 			end
+			entries[path..name] = data
 		end
-		libzstd.ZSTD_freeDCtx(ctx)
-		libzstd.ZSTD_freeDDict(dict)
-		break
 	end
+	libzstd.ZSTD_freeDCtx(ctx)
+	libzstd.ZSTD_freeDDict(dict)
 	return entries, dict_bin
 end
 
