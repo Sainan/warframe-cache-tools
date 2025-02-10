@@ -91,9 +91,9 @@ class CacheManifestReader
 end
 
 function oodle_init()
-	if not oo2core_9_win64 then
-		oo2core_9_win64 = ffi.open(base_path.."/oo2core_9_win64")
-		oo2core_9_win64:cdef[[
+	if not oo2core_9 then
+		oo2core_9 = ffi.open(os.platform == "windows" ? base_path.."/oo2core_9" : base_path.."/oo2core_9.so")
+		oo2core_9:cdef[[
 		int OodleLZ_Decompress(const char* inputData, size_t inputLen, void* outputData, size_t outputLen, int a5, int a6, int a7, size_t a8, size_t a9, size_t a10, size_t a11, size_t a12, size_t a13, int a14);
 		int OodleLZ_Compress(int format, const char* data, size_t size, void* out, int level, size_t pOptions, size_t a7, size_t a8, size_t a9);
 		]]
@@ -103,7 +103,7 @@ end
 function oodle_decompress(compressed, decompressed_size)
 	oodle_init()
 	local out = ffi.alloc(decompressed_size)
-	oo2core_9_win64.OodleLZ_Decompress(compressed, #compressed, out, decompressed_size, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3)
+	oo2core_9.OodleLZ_Decompress(compressed, #compressed, out, decompressed_size, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3)
 	return ffi.read(out)
 end
 
@@ -112,7 +112,7 @@ function oodle_compress(data)
 	$define format = 13 -- https://github.com/Crauzer/OodleSharp/blob/master/OodleSharp/OodleFormat.cs
 	$define level = 4 -- https://github.com/Crauzer/OodleSharp/blob/master/OodleSharp/OodleCompressionLevel.cs
 	local out_data = ffi.alloc(#data + 69)
-	local out_size = oo2core_9_win64.OodleLZ_Compress(format, data, #data, out_data, level, 0, 0, 0, 0)
+	local out_size = oo2core_9.OodleLZ_Compress(format, data, #data, out_data, level, 0, 0, 0, 0)
 	return ffi.read(out_data):sub(1, out_size)
 end
 
@@ -324,7 +324,7 @@ end
 
 function zstd_init()
 	if not libzstd then
-		libzstd = ffi.open(base_path.."/libzstd")
+		libzstd = ffi.open(os.platform == "windows" ? base_path.."/libzstd" : base_path.."/libzstd.so")
 		libzstd:cdef[[
 		size_t ZSTD_createDDict(const char* dictBuffer, size_t dictSize);
 		size_t ZSTD_createDCtx();
