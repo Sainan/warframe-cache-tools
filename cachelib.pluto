@@ -16,6 +16,9 @@ end
 class CacheManifest
 	function __construct(path)
 		self.bin = io.contents(get_local_path(path).."_H")
+		if not self.bin then
+			error(path.." was not found on disk. Forgot to download it or download failed?")
+		end
 		self.i = 1
 		self.i += 20
 		self.entry_i = 0
