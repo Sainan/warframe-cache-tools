@@ -6,3 +6,4 @@ int/
 .sun
 *.cpp
 *.exe
+!pluto.exe
