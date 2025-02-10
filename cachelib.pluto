@@ -454,3 +454,70 @@ function languages_pack(entries, dict = "")
 	end
 	return bin:concat()
 end
+
+function common_header_unpack(bin)
+	local i = 1
+	i += 16 -- hash
+	local num_paths
+	num_paths, i = string.unpack("<I4", bin, i)
+	for _ = 1, num_paths do
+		local path
+		path, i = string.unpack("<s4", bin, i)
+	end
+	local metadata
+	metadata, i = string.unpack("<s4", bin, i)
+	i += 4 -- type
+	return i, metadata
+end
+
+function texture_unpack_header(bin)
+	local i, metadata = common_header_unpack(bin)
+	local miplevels, unk1, unk2, format, num_unk
+	miplevels, unk1, unk2, format, num_unk, i = string.unpack("<I1I1I1I1I4", bin, i)
+	i += num_unk * 4
+	local width, height
+	width, height, i = string.unpack("<I2I2", bin, i)
+	-- https://github.com/Puxtril/Warframe-Exporter/blob/master/include/texture/TextureTypes.h
+	-- https://github.com/Puxtril/Warframe-Exporter/blob/d2ad9f805a6b03a1dda26302f144f34d242d1288/include/texture/TextureExportTypes.h#L10
+	-- https://github.com/redorav/ddspp/blob/master/ddspp.h#L434
+	local bytes_per_block = switch format do
+		case 1 -> 8
+		case 3 -> 16
+	end
+	assert(bytes_per_block, "unsupported format")
+	return {
+		metadata = metadata,
+		miplevels = miplevels,
+		format = format,
+		width = width,
+		height = height,
+		data_size = math.max(1, math.floor((width + 3) / 4)) * math.max(1, math.floor((height + 3) / 4)) * bytes_per_block -- assumption: format is compressed (holds for 1 & 3)
+	}
+end
+
+function dds_header_pack(info)
+	local bin = "DDS "
+	bin ..= "\x7C\x00\x00\x00\x07\x10\x0A\x00"
+	bin ..= string.pack("<I4I4", info.height, info.width)
+	local fmt_fourcc = switch info.format do
+		case 1 -> "DXT1"
+		case 3 -> "DXT5"
+	end
+	return bin ..       "\x00\x10\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00"..
+		"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"..
+		"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"..
+		"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x20\x00\x00\x00"..
+		"\x04\x00\x00\x00"..fmt_fourcc.."\x00\x00\x00\x00\x00\x00\x00\x00"..
+		"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x10\x00\x00"..
+		"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+end
+
+function texture_export_dds(path)
+	path = get_local_path(path)
+	local H = io.contents(path .. "_H") or error("file not found")
+	local B = io.contents(path .. "_B") or error("file is missing body")
+	local info = texture_unpack_header(H)
+	assert(#B >= info.data_size)
+	return dds_header_pack(info)
+		.. B:sub((1 + #B) - info.data_size) -- skip mipmaps (if any)
+end
