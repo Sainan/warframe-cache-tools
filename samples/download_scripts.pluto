@@ -1,10 +1,10 @@
 dofile "../cachelib.pluto"
 
-local meta_manifest = new CacheManifestReader("/H.Cache.bin")
+local meta_manifest = new CacheManifest("/H.Cache.bin")
 print("Cache manifest hash: "..b64m_encode(meta_manifest:getHash("/B.Cache.Windows.bin")))
 
 meta_manifest:downloadFile("/B.Cache.Windows.bin", TYPE_MANIFEST)
-local main_manifest = new CacheManifestReader("/B.Cache.Windows.bin")
+local main_manifest = new CacheManifest("/B.Cache.Windows.bin")
 
 for main_manifest:getPaths() as path do
 	if path:sub(-4) == ".lua" then

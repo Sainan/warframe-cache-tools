@@ -1,10 +1,10 @@
 dofile "../cachelib.pluto"
 
-local meta_manifest = new CacheManifestReader("/H.Cache.bin")
+local meta_manifest = new CacheManifest("/H.Cache.bin")
 print("Cache manifest hash: "..b64m_encode(meta_manifest:getHash("/B.Cache.Windows.bin")))
 
 for { "en", "de", "es", "fr", "it", "ja", "ko", "pl", "pt", "ru", "tc", "th", "tr", "uk", "zh" } as lang do
 	meta_manifest:downloadFile("/B.Cache.Windows_"..lang..".bin", TYPE_MANIFEST)
-	local lang_manifest = new CacheManifestReader("/B.Cache.Windows_"..lang..".bin")
+	local lang_manifest = new CacheManifest("/B.Cache.Windows_"..lang..".bin")
 	lang_manifest:downloadFile("/Languages.bin", TYPE_BIN, "_"..lang)
 end

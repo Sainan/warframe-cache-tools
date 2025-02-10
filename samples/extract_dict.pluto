@@ -2,11 +2,11 @@ dofile "../cachelib.pluto"
 
 $define lang = "en"
 
-local meta_manifest = new CacheManifestReader("/H.Cache.bin")
+local meta_manifest = new CacheManifest("/H.Cache.bin")
 print("Cache manifest hash: "..b64m_encode(meta_manifest:getHash("/B.Cache.Windows.bin")))
 
 meta_manifest:downloadFile("/B.Cache.Windows_"..lang..".bin", TYPE_MANIFEST)
-local lang_manifest = new CacheManifestReader("/B.Cache.Windows_"..lang..".bin")
+local lang_manifest = new CacheManifest("/B.Cache.Windows_"..lang..".bin")
 lang_manifest:downloadFile("/Languages.bin", TYPE_BIN, "_"..lang)
 
 local bin = io.contents(get_local_path("/Languages.bin", "_"..lang).."_H")

@@ -13,7 +13,7 @@ function get_local_path(path, suffix = "")
 	return base_path.."/data/0"..suffix..path
 end
 
-class CacheManifestReader
+class CacheManifest
 	function __construct(path)
 		self.bin = io.contents(get_local_path(path).."_H")
 		self.i = 1
