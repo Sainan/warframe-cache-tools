@@ -1,7 +1,7 @@
 data/
 manifest paths.txt
 
-# I initally toyed around a bit with C++ but all the code is now replicated in Pluto, I just keep these files for reference.
+# I initially toyed around a bit with C++ but all the code is now replicated in Pluto, I just keep these files for reference.
 int/
 .sun
 *.cpp
