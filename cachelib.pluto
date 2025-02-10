@@ -172,7 +172,6 @@ function shcc_hash(data)
 	return crypto.md5("SHCC\x1F\x00\x00\x00"..data.H:sub(17)..(data.B_compressed or ""), true)
 end
 
--- Works for H.Cache.bin so far
 function shcc_pack_H(data)
 	local bin = "SHCC\x1f\x00\x00\x00"
 	local hash = crypto.md5("SHCC\x1f\x00\x00\x00"..data:sub(17), true)
