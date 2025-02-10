@@ -222,7 +222,7 @@ function shcc_compress_chunk_oodle(data)
 	)..compressed
 end
 
-TYPE_DECO_OVERRIDES = 0x3
+TYPE_METADATA = 0x3 -- deco overrides, vendor manifests
 TYPE_SOUND2 = 0x4
 TYPE_SOUND = 0x6
 TYPE_MANIFEST = 0xD -- also used for .cvr
