@@ -1,0 +1,23 @@
+if not arg[1] then
+	print("Syntax: pluto extract.pluto <path>")
+	return
+end
+
+if arg[1]:sub(-4) ~= ".png" then
+	print("Extracting this type is currently not supported.")
+	return
+end
+
+dofile(io.part(io.absolute(debug.getinfo(1, "S").source:sub(2), "parent")).."/lib/cachelib.pluto")
+
+download_file("/H.Cache.bin", TYPE_MANIFEST, "---------------------w")
+local meta_manifest = new CacheManifest("/H.Cache.bin")
+print("Cache manifest hash: "..b64m_encode(meta_manifest:getHash("/B.Cache.Windows.bin")))
+
+meta_manifest:downloadFile("/B.Cache.Windows.bin", TYPE_MANIFEST)
+local main_manifest = new CacheManifest("/B.Cache.Windows.bin")
+
+main_manifest:downloadFile(arg[1], TYPE_PNG)
+io.mkdirs("assets/0"..io.part(arg[1], "parent"))
+io.contents("assets/0"..arg[1]..".dds", texture_export_dds(arg[1]))
+print("Saved to assets/0"..arg[1]..".dds")
