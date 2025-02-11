@@ -10,9 +10,22 @@ for io.listdir("assets/0", true) as path do
 			print("Packing "..path.."...")
 			-- TODO: Validate DDS header against H to detect mismatches in dimensions & format.
 			local H = io.contents(get_local_path(path).."_H")
+			assert(H)
+			local info = texture_unpack_header(H)
 			H = H:sub(1, 0x42).."\x01"..H:sub(0x44) -- Set miplevels to 1
-			local B = io.contents("assets/0"..path..".dds"):sub(1 + 0x80)
-			local bin, hash = shcc_pack_HB(H, shcc_compress_chunk_oodle(B), #B)
+			local B_raw = io.contents("assets/0"..path..".dds"):sub(1 + 0x80)
+			assert(info.data_size == #B_raw, "Data size mismatch. Are dimensions and format the same?")
+			local B
+			if info.format == 1 then
+				local quarter = info.data_size >> 2
+				B = shcc_compress_chunk_oodle(B_raw:sub(1 + quarter * 0, quarter * 1))..
+					shcc_compress_chunk_oodle(B_raw:sub(1 + quarter * 1, quarter * 2))..
+					shcc_compress_chunk_oodle(B_raw:sub(1 + quarter * 2, quarter * 3))..
+					shcc_compress_chunk_oodle(B_raw:sub(1 + quarter * 3, quarter * 4))
+			else
+				B = shcc_compress_chunk_oodle(B_raw)
+			end
+			local bin, hash = shcc_pack_HB(H, B, #B_raw)
 			io.mkdirs("content/0"..io.part(path, "parent"))
 			io.contents("content/0"..path.."!A3_"..b64m_encode(hash), bin)
 			main_manifest:setHash(path, hash)
