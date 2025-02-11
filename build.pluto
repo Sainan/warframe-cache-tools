@@ -1,0 +1,33 @@
+dofile(io.part(io.absolute(debug.getinfo(1, "S").source:sub(2), "parent")).."/lib/cachelib.pluto")
+
+local main_manifest = new CacheManifest("/B.Cache.Windows.bin")
+
+for io.listdir("assets/0", true) as path do
+	if io.isfile(path) then
+		path = path:sub(9):replace("\\", "/")
+		if path:sub(-4) == ".dds" then
+			path = path:sub(1, -5)
+			print("Packing "..path.."...")
+			-- TODO: Validate DDS header against H to detect mismatches in dimensions & format.
+			local H = io.contents(get_local_path(path).."_H")
+			H = H:sub(1, 0x42).."\x01"..H:sub(0x44) -- Set miplevels to 1
+			local B = io.contents("assets/0"..path..".dds"):sub(1 + 0x80)
+			local bin, hash = shcc_pack_HB(H, shcc_compress_chunk_oodle(B), #B)
+			io.mkdirs("content/0"..io.part(path, "parent"))
+			io.contents("content/0"..path.."!A3_"..b64m_encode(hash), bin)
+			main_manifest:setHash(path, hash)
+		else
+			error("Unexpected file in assets folder: "..path)
+		end
+	end
+end
+
+print("Updating manifests...")
+
+local bin, hash = shcc_pack_H(main_manifest:pack())
+io.contents("content/0/B.Cache.Windows.bin!D_"..b64m_encode(hash), bin)
+
+local meta_manifest = new CacheManifest("/H.Cache.bin")
+meta_manifest:setHash("/B.Cache.Windows.bin", hash)
+bin, hash = shcc_pack_H(meta_manifest:pack())
+io.contents("content/0/H.Cache.bin!D_---------------------w", bin)
