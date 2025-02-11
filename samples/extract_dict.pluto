@@ -1,4 +1,4 @@
-dofile(io.part(debug.getinfo(1, "S").source:sub(2), "parent").."/../cachelib.pluto")
+dofile(io.part(debug.getinfo(1, "S").source:sub(2), "parent").."/../lib/cachelib.pluto")
 
 $define lang = "en"
 

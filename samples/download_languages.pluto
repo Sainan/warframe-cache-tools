@@ -1,4 +1,4 @@
-dofile(io.part(debug.getinfo(1, "S").source:sub(2), "parent").."/../cachelib.pluto")
+dofile(io.part(debug.getinfo(1, "S").source:sub(2), "parent").."/../lib/cachelib.pluto")
 
 local meta_manifest = new CacheManifest("/H.Cache.bin")
 print("Cache manifest hash: "..b64m_encode(meta_manifest:getHash("/B.Cache.Windows.bin")))
