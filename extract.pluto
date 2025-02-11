@@ -10,7 +10,7 @@ end
 
 dofile(io.part(io.absolute(debug.getinfo(1, "S").source:sub(2), "parent")).."/lib/cachelib.pluto")
 
-download_file("/H.Cache.bin", TYPE_MANIFEST, "---------------------w")
+download_file("/H.Cache.bin", TYPE_MANIFEST)
 local meta_manifest = new CacheManifest("/H.Cache.bin")
 print("Cache manifest hash: "..b64m_encode(meta_manifest:getHash("/B.Cache.Windows.bin")))
 

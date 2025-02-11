@@ -1,6 +1,6 @@
 dofile(io.part(debug.getinfo(1, "S").source:sub(2), "parent").."/../lib/cachelib.pluto")
 
-download_file("/H.Cache.bin", TYPE_MANIFEST, "---------------------w")
+download_file("/H.Cache.bin", TYPE_MANIFEST)
 
 -- This way, we end up requesting http://content.warframe.com/0/H.Cache.bin!D_---------------------w
 -- Although the client would typically request https://origin.warframe.com/origin/0/H.Cache.bin!D_---------------------w

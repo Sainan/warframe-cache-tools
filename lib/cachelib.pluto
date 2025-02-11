@@ -242,7 +242,7 @@ TYPE_PNG = 0xA3
 TYPE_FX_MAT = 0xD0
 TYPE_SKEL_FBX = 0x110
 
-function download_file(path, type, b64m_hash, suffix = "")
+function download_file(path, type, b64m_hash = "---------------------w", suffix = "")
 	local url = string.format("http://content.warframe.com/0%s%s!%X_%s", suffix, path, type, b64m_hash)
 	print("Downloading "..url)
 	local bin, status = http.request(url)
