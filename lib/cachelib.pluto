@@ -243,12 +243,13 @@ TYPE_FX_MAT = 0xD0
 TYPE_SKEL_FBX = 0x110
 
 function download_file(path, type, b64m_hash = "---------------------w", suffix = "")
-	local url = string.format("http://content.warframe.com/0%s%s!%X_%s", suffix, path, type, b64m_hash)
-	print("Downloading "..url)
-	local bin, status = http.request(url)
+	local req_path = string.format("/0%s%s!%X_%s", suffix, path, type, b64m_hash)
+	print("Downloading "..req_path)
+	local bin, status = http.request("http://content.warframe.com"..req_path)
 	if status == 200 then
-		--io.contents("data/tmp", bin)
-		--os.execute("decompress-shcc.exe data/tmp data"..path..suffix)
+		io.mkdirs("content"..io.part(req_path, "parent"))
+		io.contents("content"..req_path, bin)
+
 		local local_path = get_local_path(path, suffix)
 		io.mkdirs(io.part(local_path, "parent"))
 		local shcc_itself_compressed = bin:sub(1, 4) ~= "SHCC" -- /Lotus/Scripts/Cmds/StartEncounter.lua
