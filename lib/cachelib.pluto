@@ -244,8 +244,11 @@ TYPE_SKEL_FBX = 0x110
 
 function download_file(path, type, b64m_hash = "---------------------w", suffix = "")
 	local req_path = string.format("/0%s%s!%X_%s", suffix, path, type, b64m_hash)
-	print("Downloading "..req_path)
-	local bin, status = http.request("http://content.warframe.com"..req_path)
+	local url = req_path == "/0/H.Cache.bin!D_---------------------w"
+				? string.format("http://origin.warframe.com/origin/%08X/0/H.Cache.bin!D_---------------------w", math.random(0, 0xffffffff)) -- bust cache
+				: "http://content.warframe.com"..req_path
+	print("Downloading "..url)
+	local bin, status = http.request(url)
 	if status == 200 then
 		io.mkdirs("content"..io.part(req_path, "parent"))
 		io.contents("content"..req_path, bin)
