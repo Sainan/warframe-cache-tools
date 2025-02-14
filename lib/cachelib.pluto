@@ -476,8 +476,12 @@ function common_header_unpack(bin)
 	end
 	local metadata
 	metadata, i = string.unpack("<s4", bin, i)
-	i += 4 -- type
-	return i, metadata
+	if #metadata ~= 0 then
+		i += 1 -- null terminator is not part of the length
+	end
+	local type
+	type, i = string.unpack("<I4", bin, i)
+	return i, metadata, type
 end
 
 function texture_unpack_header(bin)
