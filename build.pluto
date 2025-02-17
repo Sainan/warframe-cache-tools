@@ -28,6 +28,8 @@ for io.listdir("assets/0", true) as path do
 			local bin, hash = shcc_pack_HB(H, B, #B_raw)
 			io.mkdirs("content/0"..io.part(path, "parent"))
 			io.contents("content/0"..path.."!A3_"..b64m_encode(hash), bin)
+			io.mkdirs("content (managed)/0"..io.part(path, "parent"))
+			io.contents("content (managed)/0"..path.."!A3_"..b64m_encode(hash), bin)
 			main_manifest:setHash(path, hash)
 		else
 			error("Unexpected file in assets folder: "..path)
