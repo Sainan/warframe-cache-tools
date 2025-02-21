@@ -26,8 +26,6 @@ for io.listdir("assets/0", true) as path do
 				B = shcc_compress_chunk_oodle(B_raw)
 			end
 			local bin, hash = shcc_pack_HB(H, B, #B_raw)
-			io.mkdirs("content/0"..io.part(path, "parent"))
-			io.contents("content/0"..path.."!A3_"..b64m_encode(hash), bin)
 			io.mkdirs("content (managed)/0"..io.part(path, "parent"))
 			io.contents("content (managed)/0"..path.."!A3_"..b64m_encode(hash), bin)
 			main_manifest:setHash(path, hash)
@@ -36,13 +34,3 @@ for io.listdir("assets/0", true) as path do
 		end
 	end
 end
-
-print("Updating manifests...")
-
-local bin, hash = shcc_pack_H(main_manifest:pack())
-io.contents("content/0/B.Cache.Windows.bin!D_"..b64m_encode(hash), bin)
-
-local meta_manifest = new CacheManifest("/H.Cache.bin")
-meta_manifest:setHash("/B.Cache.Windows.bin", hash)
-bin, hash = shcc_pack_H(meta_manifest:pack())
-io.contents("content/0/H.Cache.bin!D_---------------------w", bin)

@@ -250,9 +250,6 @@ function download_file(path, type, b64m_hash = "---------------------w", suffix 
 	print("Downloading "..url)
 	local bin, status = http.request(url)
 	if status == 200 then
-		io.mkdirs("content"..io.part(req_path, "parent"))
-		io.contents("content"..req_path, bin)
-
 		local local_path = get_local_path(path, suffix)
 		io.mkdirs(io.part(local_path, "parent"))
 		local shcc_itself_compressed = bin:sub(1, 4) ~= "SHCC" -- /Lotus/Scripts/Cmds/StartEncounter.lua
