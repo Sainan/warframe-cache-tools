@@ -10,14 +10,24 @@ end
 
 dofile(io.part(io.absolute(debug.getinfo(1, "S").source:sub(2), "parent")).."/lib/cachelib.pluto")
 
-download_file("/H.Cache.bin", TYPE_MANIFEST)
-local meta_manifest = new CacheManifest("/H.Cache.bin")
-print("Cache manifest hash: "..b64m_encode(meta_manifest:getHash("/B.Cache.Windows.bin")))
+local typeid = TYPE_PNG
+if arg[1]:sub(-7) == "_em.png" then
+	typeid = TYPE_PNG_EM
+end
 
-meta_manifest:downloadFile("/B.Cache.Windows.bin", TYPE_MANIFEST)
-local main_manifest = new CacheManifest("/B.Cache.Windows.bin")
+if arg[1]:sub(0, 29) == "/Lotus/Interface/ClanEmblems/" then
+	download_file(arg[1], typeid)
+else
+	download_file("/H.Cache.bin", TYPE_MANIFEST)
+	local meta_manifest = new CacheManifest("/H.Cache.bin")
+	print("Cache manifest hash: "..b64m_encode(meta_manifest:getHash("/B.Cache.Windows.bin")))
 
-main_manifest:downloadFile(arg[1], TYPE_PNG)
+	meta_manifest:downloadFile("/B.Cache.Windows.bin", TYPE_MANIFEST)
+	local main_manifest = new CacheManifest("/B.Cache.Windows.bin")
+
+	main_manifest:downloadFile(arg[1], typeid)
+end
+
 io.mkdirs("assets/0"..io.part(arg[1], "parent"))
 io.contents("assets/0"..arg[1]..".dds", texture_export_dds(arg[1]))
 print("Saved to assets/0"..arg[1]..".dds")
