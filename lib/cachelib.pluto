@@ -166,14 +166,14 @@ function shcc_unpack(bin)
 	try
 		local B_start = i
 		data.B, i = shcc_decompress_chunk(bin, i)
-		data.B_compressed = bin:sub(B_start + 9, -15)
+		data.B_raw = bin:sub(B_start + 9, -15)
 	catch _ then
 	end
 	return data
 end
 
 function shcc_hash(data)
-	return crypto.md5("SHCC\x1F\x00\x00\x00"..data.H:sub(17)..(data.B_compressed or ""), true)
+	return crypto.md5("SHCC\x1F\x00\x00\x00"..data.H:sub(17)..(data.B_raw or ""), true)
 end
 
 function shcc_pack_H(data)
@@ -193,7 +193,7 @@ end
 
 function shcc_pack_HB(H, B_compressed, B_decompressed_size)
 	local bin = "SHCC\x1f\x00\x00\x00"
-	local hash = shcc_hash({ H = H, B_compressed = B_compressed })
+	local hash = shcc_hash({ H = H, B_raw = B_compressed })
 
 	bin ..= "\x00"
 	bin ..= string.pack("<I4I4", #H, #H)
@@ -203,6 +203,25 @@ function shcc_pack_HB(H, B_compressed, B_decompressed_size)
 	bin ..= "\x02"
 	bin ..= string.pack("<I4I4", B_decompressed_size, #B_compressed)
 	bin ..= B_compressed
+
+	bin ..= "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x52"
+	bin ..= string.pack("<I4", crypto.crc32c(bin))
+
+	return bin, hash
+end
+
+function shcc_pack_HB_uncompressed(H, B)
+	local bin = "SHCC\x1f\x00\x00\x00"
+	local hash = shcc_hash({ H = H, B_raw = B })
+
+	bin ..= "\x00"
+	bin ..= string.pack("<I4I4", #H, #H)
+	bin ..= hash
+	bin ..= H:sub(17)
+
+	bin ..= "\x00"
+	bin ..= string.pack("<I4I4", #B, #B)
+	bin ..= B
 
 	bin ..= "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x52"
 	bin ..= string.pack("<I4", crypto.crc32c(bin))

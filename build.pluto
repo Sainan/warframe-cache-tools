@@ -15,7 +15,7 @@ for io.listdir("assets/0", true) as path do
 			H = H:sub(1, 0x42).."\x01"..H:sub(0x44) -- Set miplevels to 1
 			local B_raw = io.contents("assets/0"..path..".dds"):sub(1 + 0x80)
 			assert(info.data_size == #B_raw, "Data size mismatch. Are dimensions and format the same?")
-			local B
+			--[[local B
 			if info.format == 1 then
 				local quarter = info.data_size >> 2
 				B = shcc_compress_chunk_oodle(B_raw:sub(1 + quarter * 0, quarter * 1))..
@@ -25,7 +25,8 @@ for io.listdir("assets/0", true) as path do
 			else
 				B = shcc_compress_chunk_oodle(B_raw)
 			end
-			local bin, hash = shcc_pack_HB(H, B, #B_raw)
+			local bin, hash = shcc_pack_HB(H, B, #B_raw)]]
+			local bin, hash = shcc_pack_HB_uncompressed(H, B_raw)
 			io.mkdirs("content (managed)/0"..io.part(path, "parent"))
 			io.contents("content (managed)/0"..path.."!A3_"..b64m_encode(hash), bin)
 			main_manifest:setHash(path, hash)
