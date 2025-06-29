@@ -245,13 +245,25 @@ function shcc_compress_chunk_oodle(data)
 	)..compressed
 end
 
+function get_type_id(name, version)
+	return switch name do
+		case "metadata" -> 0x3
+		case "sound2" -> 0x4
+		case "sound" -> 0x6
+		case "manifest" -> 0xD
+		case "bin" -> compareversions(version, "38.5.0") >= 0 ? 0x2C : 0x2B
+		case "dependancies.bin" -> 0x52
+		case "lua" -> compareversions(version, "39.0.0") >= 0 ? 0x60 : 0x5B
+	end
+end
+
 TYPE_METADATA = 0x3 -- deco overrides, vendor manifests
 TYPE_SOUND2 = 0x4
 TYPE_SOUND = 0x6
 TYPE_MANIFEST = 0xD -- also used for .cvr
-TYPE_BIN = 0x2C -- Changed from 0x2B to 0x2C in 38.5.0
+TYPE_BIN = get_type_id("bin", "38.5.0")
 TYPE_DEPENDANCIES_BIN = 0x52
-TYPE_LUA = 0x5B
+TYPE_LUA = get_type_id("lua", "39.0.0")
 TYPE_FBX = 0x60
 TYPE_LEVEL_FBX = 0x67
 TYPE_TMF = 0x73
