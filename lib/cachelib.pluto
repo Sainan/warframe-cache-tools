@@ -24,7 +24,7 @@ class CacheManifest
 		self.i += 20
 		self.entry_i = 0
 		self.num_entries, self.i = string.unpack("<I4", self.bin, self.i)
-		if self.num_entries == 0 then
+		while self.num_entries == 0 do
 			self.num_entries, self.i = string.unpack("<I4", self.bin, self.i)
 		end
 		self.paths = {}
@@ -250,7 +250,7 @@ function get_type_id(name, version)
 		case "metadata" -> 0x3
 		case "sound2" -> 0x4
 		case "sound" -> 0x6
-		case "manifest" -> 0xD
+		case "manifest" -> compareversions(version, "40.0.0") >= 0 ? 0xE : 0xD
 		case "bin" -> compareversions(version, "38.5.0") >= 0 ? 0x2C : 0x2B
 		case "dependancies.bin" -> 0x52
 		case "lua" -> compareversions(version, "39.0.0") >= 0 ? 0x60 : 0x5B
@@ -260,7 +260,7 @@ end
 TYPE_METADATA = 0x3 -- deco overrides, vendor manifests
 TYPE_SOUND2 = 0x4
 TYPE_SOUND = 0x6
-TYPE_MANIFEST = 0xD -- also used for .cvr
+TYPE_MANIFEST = get_type_id("manifest", "40.0.0") -- also used for .cvr
 TYPE_BIN = get_type_id("bin", "38.5.0")
 TYPE_DEPENDANCIES_BIN = 0x52
 TYPE_LUA = get_type_id("lua", "39.0.0")
@@ -276,8 +276,8 @@ TYPE_SKEL_FBX = 0x110
 
 function download_file(path, type, b64m_hash = "---------------------w", suffix = "")
 	local req_path = string.format("/0%s%s!%X_%s", suffix, path, type, b64m_hash)
-	local url = req_path == "/0/H.Cache.bin!D_---------------------w"
-				? string.format("http://origin.warframe.com/origin/%08X/0/H.Cache.bin!D_---------------------w", math.random(0, 0xffffffff)) -- bust cache
+	local url = req_path == "/0/H.Cache.bin!E_---------------------w"
+				? string.format("http://origin.warframe.com/origin/%08X/0/H.Cache.bin!E_---------------------w", math.random(0, 0xffffffff)) -- bust cache
 				: "http://content.warframe.com"..req_path
 	print("Downloading "..url)
 	local bin, status = http.request(url)
