@@ -23,18 +23,19 @@ class CacheManifest
 		self.i = 1
 		self.i += 20
 		self.entry_i = 0
-		self.num_entries, self.i = string.unpack("<I4", self.bin, self.i)
-		while self.num_entries == 0 do
-			self.num_entries, self.i = string.unpack("<I4", self.bin, self.i)
-		end
+		self.remaining_entries = 0
 		self.paths = {}
 		self.hashes = {}
 		self.unks = {}
 	end
 
 	function seek(opt_stop_at_path)
-		while self.entry_i ~= self.num_entries do
+		while self.i < #self.bin do
+			while self.remaining_entries == 0 do
+				self.remaining_entries, self.i = string.unpack("<I4", self.bin, self.i)
+			end
 			self.entry_i += 1
+			self.remaining_entries -= 1
 			local path, hash, unk
 			path, self.i = string.unpack("<s4", self.bin, self.i)
 			hash = self.bin:sub(self.i, self.i + 15)
