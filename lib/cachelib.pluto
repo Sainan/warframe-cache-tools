@@ -360,7 +360,11 @@ function toc_list_files(entries, index)
 end
 
 function cache_get_toc_entry(cache, e)
-	return shcc_decompress_chunk_oodle(cache, 1 + e.cache_offset, e.decompressed_size)
+	local i = 1 + e.cache_offset
+	if e.decompressed_size == e.compressed_size then
+		return cache:sub(i, i + e.compressed_size - 1), i + e.compressed_size
+	end
+	return shcc_decompress_chunk_oodle(cache, i, e.decompressed_size)
 end
 
 function zstd_init()
