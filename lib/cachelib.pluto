@@ -136,13 +136,10 @@ function shcc_decompress_chunk(bin, i)
 		return data, i
 	end
 	assert(chunk_type == 2)
-	return shcc_decompress_chunk_oodle(bin, i, decompressed_size, compressed_size)
+	return shcc_decompress_chunk_oodle(bin, i, decompressed_size)
 end
 
-function shcc_decompress_chunk_oodle(bin, i, decompressed_size, compressed_size)
-	if decompressed_size == compressed_size then
-		return bin:sub(i, i + compressed_size - 1), compressed_size
-	end
+function shcc_decompress_chunk_oodle(bin, i, decompressed_size)
 	local decompressed = ""
 	while #decompressed < decompressed_size do
 		local block_info = bin:sub(i, i + 7)
@@ -363,7 +360,11 @@ function toc_list_files(entries, index)
 end
 
 function cache_get_toc_entry(cache, e)
-	return shcc_decompress_chunk_oodle(cache, 1 + e.cache_offset, e.decompressed_size, e.compressed_size)
+	if e.decompressed_size == e.compressed_size then
+		local i = 1 + e.cache_offset
+		return cache:sub(i, i + e.compressed_size - 1), e.compressed_size
+	end
+	return shcc_decompress_chunk_oodle(cache, 1 + e.cache_offset, e.decompressed_size)
 end
 
 function zstd_init()
