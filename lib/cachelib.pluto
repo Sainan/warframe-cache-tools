@@ -105,11 +105,13 @@ function oodle_init()
 	end
 end
 
-function oodle_decompress(compressed, decompressed_size)
-	oodle_init()
-	local out = ffi.alloc(decompressed_size)
-	oo2core_9.OodleLZ_Decompress(compressed, #compressed, out, decompressed_size, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3)
-	return ffi.read(out)
+if not oodle_decompress then
+	function oodle_decompress(compressed, decompressed_size)
+		oodle_init()
+		local out = ffi.alloc(decompressed_size)
+		oo2core_9.OodleLZ_Decompress(compressed, #compressed, out, decompressed_size, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3)
+		return ffi.read(out)
+	end
 end
 
 function oodle_compress(data)
