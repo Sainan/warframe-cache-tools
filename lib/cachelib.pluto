@@ -253,6 +253,7 @@ function get_type_id(name, version)
 		case "sound" -> 0x6
 		case "manifest" -> compareversions(version, "40.0.0") >= 0 ? 0xE : 0xD
 		case "bin" -> compareversions(version, "38.5.0") >= 0 ? 0x2C : 0x2B
+		case "packages.bin" -> compareversions(version, "40.0.0") >= 0 ? 0x2D : compareversions(version, "38.5.0") >= 0 ? 0x2C : 0x2B
 		case "dependancies.bin" -> 0x52
 		case "lua" -> compareversions(version, "40.0.0") >= 0 ? 0x6A : compareversions(version, "39.0.0") >= 0 ? 0x60 : 0x5B
 	end
@@ -262,7 +263,8 @@ TYPE_METADATA = 0x3 -- deco overrides, vendor manifests
 TYPE_SOUND2 = 0x4
 TYPE_SOUND = 0x6
 TYPE_MANIFEST = get_type_id("manifest", "40.0.0") -- also used for .cvr
-TYPE_BIN = get_type_id("bin", "38.5.0")
+TYPE_BIN = get_type_id("bin", "38.5.0") -- Languages.bin
+TYPE_PACKAGES_BIN = get_type_id("packages.bin", "40.0.0")
 TYPE_DEPENDANCIES_BIN = 0x52
 TYPE_LUA = get_type_id("lua", "40.0.0")
 TYPE_FBX = 0x60

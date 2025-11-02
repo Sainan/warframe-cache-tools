@@ -5,4 +5,4 @@ print("Cache manifest hash: "..b64m_encode(meta_manifest:getHash("/B.Cache.Windo
 
 meta_manifest:downloadFile("/B.Cache.Windows.bin", TYPE_MANIFEST)
 local main_manifest = new CacheManifest("/B.Cache.Windows.bin")
-main_manifest:downloadFile("/Packages.bin", TYPE_BIN)
+main_manifest:downloadFile("/Packages.bin", TYPE_PACKAGES_BIN)
