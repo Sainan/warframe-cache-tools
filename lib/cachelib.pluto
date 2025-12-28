@@ -166,12 +166,12 @@ function shcc_unpack(bin)
 	i += 8
 	local data = {}
 	data.H, i = shcc_decompress_chunk(bin, i)
-	try
+	xpcall(|| -> do
 		local B_start = i
 		data.B, i = shcc_decompress_chunk(bin, i)
 		data.B_raw = bin:sub(B_start + 9, -15)
-	catch _ then
-	end
+	end, || -> do
+	end)
 	return data
 end
 
