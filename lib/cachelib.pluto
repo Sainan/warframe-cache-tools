@@ -268,6 +268,7 @@ TYPE_MANIFEST = get_type_id("manifest", "40.0.0") -- also used for .cvr
 TYPE_BIN = get_type_id("bin", "38.5.0") -- Languages.bin
 TYPE_PACKAGES_BIN = get_type_id("packages.bin", "40.0.0")
 TYPE_DEPENDANCIES_BIN = 0x52
+TYPE_DIALOGUE = 0x53
 TYPE_LUA = get_type_id("lua", "41.0.0")
 TYPE_FBX = 0x60
 TYPE_LEVEL_FBX = 0x67
