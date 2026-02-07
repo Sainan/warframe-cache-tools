@@ -97,7 +97,12 @@ end
 
 function oodle_init()
 	if not oo2core_9 then
-		oo2core_9 = ffi.open(os.platform == "windows" ? lib_path.."/oo2core_9" : lib_path.."/oo2core_9.so")
+		oo2core_9 = ffi.open(os.platform == "windows"
+			? "arm," in os.arch
+				? lib_path.."/oo2core_winuwparm64" -- Source: https://github.com/Sainan/noodle/tree/senpai/2.9.14
+				: lib_path.."/oo2core_9"
+			: lib_path.."/oo2core_9.so"
+			)
 		oo2core_9:cdef[[
 		int OodleLZ_Decompress(const char* inputData, size_t inputLen, void* outputData, size_t outputLen, int a5, int a6, int a7, size_t a8, size_t a9, size_t a10, size_t a11, size_t a12, size_t a13, int a14);
 		int OodleLZ_Compress(int format, const char* data, size_t size, void* out, int level, size_t pOptions, size_t a7, size_t a8, size_t a9);
@@ -374,7 +379,13 @@ end
 
 function zstd_init()
 	if not libzstd then
-		libzstd = ffi.open(os.platform == "windows" ? lib_path.."/libzstd" : lib_path.."/libzstd.so")
+		libzstd = ffi.open(
+			os.platform == "windows"
+			? "arm," in os.arch
+				? lib_path.."/libzstd_woa64"
+				: lib_path.."/libzstd"
+			: lib_path.."/libzstd.so"
+			)
 		libzstd:cdef[[
 		size_t ZSTD_createDDict(const char* dictBuffer, size_t dictSize);
 		size_t ZSTD_createDCtx();
