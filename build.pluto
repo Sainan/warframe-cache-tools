@@ -27,11 +27,29 @@ for io.listdir("assets/0", true) as path do
 			end
 			local bin, hash = shcc_pack_HB(H, B, #B_raw)]]
 			local bin, hash = shcc_pack_HB_uncompressed(H, B_raw)
+
+			-- Managed
 			io.mkdirs("Content Replacements/0"..io.part(path, "parent"))
 			io.contents("Content Replacements/0"..path.."!A3_"..b64m_encode(hash), bin)
+
+			-- Unmanaged
+			io.mkdirs("content/0"..io.part(path, "parent"))
+			io.contents("content/0"..path.."!A3_"..b64m_encode(hash), bin)
 			main_manifest:setHash(path, hash)
 		else
 			error("Unexpected file in assets folder: "..path)
 		end
 	end
 end
+
+-- Unmanaged
+print("Updating manifests...")
+local bin, hash = shcc_pack_H(main_manifest:pack())
+io.contents(string.format("content/0%s!%X_%s", "/B.Cache.Windows.bin", TYPE_MANIFEST, b64m_encode(hash)), bin)
+
+local meta_manifest = new CacheManifest("/H.Cache.bin")
+meta_manifest:setHash("/B.Cache.Windows.bin", hash)
+bin, hash = shcc_pack_H(meta_manifest:pack())
+io.contents(string.format("content/0%s!%X_%s", "/H.Cache.bin", TYPE_MANIFEST, "---------------------w"), bin)
+
+io.contents("content/0/UNMANAGED", "")
