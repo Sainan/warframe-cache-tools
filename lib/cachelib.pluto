@@ -262,7 +262,7 @@ function get_type_id(name, version)
 		case "bin" -> compareversions(version, "38.5.0") >= 0 ? 0x2C : 0x2B
 		case "packages.bin" -> compareversions(version, "40.0.0") >= 0 ? 0x2D : compareversions(version, "38.5.0") >= 0 ? 0x2C : 0x2B
 		case "dependancies.bin" -> 0x52
-		case "lua" -> compareversions(version, "41.0.0") >= 0 ? 0x6D : compareversions(version, "40.0.0") >= 0 ? 0x6A : compareversions(version, "39.0.0") >= 0 ? 0x60 : 0x5B
+		case "lua" -> compareversions(version, "42.0.0") >= 0 ? 0x75 : compareversions(version, "41.0.0") >= 0 ? 0x6D : compareversions(version, "40.0.0") >= 0 ? 0x6A : compareversions(version, "39.0.0") >= 0 ? 0x60 : 0x5B
 	end
 end
 
@@ -274,7 +274,7 @@ TYPE_BIN = get_type_id("bin", "38.5.0") -- Languages.bin
 TYPE_PACKAGES_BIN = get_type_id("packages.bin", "40.0.0")
 TYPE_DEPENDANCIES_BIN = 0x52
 TYPE_DIALOGUE = 0x53
-TYPE_LUA = get_type_id("lua", "41.0.0")
+TYPE_LUA = get_type_id("lua", "42.0.0")
 TYPE_FBX = 0x60
 TYPE_LEVEL_FBX = 0x67
 TYPE_TMF = 0x73
