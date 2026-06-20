@@ -15,10 +15,14 @@ function get_local_path(path, suffix = "")
 end
 
 class CacheManifest
-	function __construct(path)
-		self.bin = io.contents(get_local_path(path).."_H")
-		if not self.bin then
-			error(path.." was not found on disk. Forgot to download it or download failed?")
+	function __construct(path_or_bin, a1_is_bin)
+		if a1_is_bin then
+			self.bin = path_or_bin
+		else
+			self.bin = io.contents(get_local_path(path_or_bin).."_H")
+			if not self.bin then
+				error(path.." was not found on disk. Forgot to download it or download failed?")
+			end
 		end
 		self.i = 1
 		self.i += 20
